@@ -66,6 +66,7 @@ Antes de construir, presentá un análisis corto y pedí el OK. Si la marca no t
   - Carruseles: diseñador 1080×1350 con descarga de PNG por slide o ZIP.
   - Historias: 1080×1920.
   - Reels virales.
+  - Reciclar episodio: si la marca tiene contenido largo (podcast, YouTube, clases), de una transcripción salen clips, Instagram, TikTok, YouTube, podcast, blog y, opcionales, newsletter, LinkedIn, Threads y Pinterest; las mejores piezas pasan al banco con guion. Leé `references/reciclaje-contenido.md`.
   - Ideas.
 - **Investigar:** Tendencias (radar, cuentas de referencia e ideas).
 - **Optimizar:**
@@ -86,10 +87,11 @@ Cargá con ArtifactData en un solo batch:
   - `carrusel`: portada con promesa, re-gancho en la slide 2, una idea por slide, 7 a 10 slides, resumen en la anteúltima, CTA con palabra clave y caption con palabras clave.
   - `historias`: 3 a 5 frames (gancho, desarrollo, interacción con sticker y DM con palabra clave) de 18 palabras como máximo.
   - `videos`: qué va en explicativo y qué va a cámara, más la mezcla.
+  - `reciclaje` (si hay contenido largo): un texto por formato, adaptado a la voz y a los canales de la marca (ver `references/reciclaje-contenido.md`).
 - **`config/meta`:** meta semanal por formato y día de producción.
 - **`config/ads`:** cuenta publicitaria, página, IG, moneda y objetivo (cuando esté conectado).
 
-**Colecciones que usa el sistema:** posts, ideas, reels, pilares, meses, disenos, historias, campanas, metrics. **Docs de configuración:** config/reglas, plan, radar, meta, ads, ads_refs.
+**Colecciones que usa el sistema:** posts, ideas, reels, pilares, meses, disenos, historias, campanas, metrics, reciclajes. **Docs de configuración:** config/reglas, plan, radar, meta, ads, ads_refs.
 
 Campos clave:
 - `posts.video`: `explicativo` | `camara`.

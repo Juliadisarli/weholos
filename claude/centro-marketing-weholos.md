@@ -16,6 +16,9 @@ _Armado el 08/11/2026 con la skill `centro-marketing-marca`._
 | `config/reglas` | base, extra, carrusel, historias, videos (copia en `claude/reglas-weholos.json`) |
 | `config/meta` | 1 reel, 2 carruseles, 3 historias por semana; día de producción: lunes |
 | `pilares` | p1-te-pasa · p2-aprendimos · p3-momento · p4-comunidad · p5-podcast |
+| `config/reglas.reciclaje` | instrucciones por formato para Reciclar episodio (10 formatos) |
+| `config/radar` | radar inicial del 08/11/2026: 6 tendencias y 8 cuentas en estado "propuesta" (detalle en `claude/recursos-bienestar-tendencias.md`) |
+| `reciclajes` | episodios reciclados (vacía al arrancar) |
 | `config/ads` | pendiente (no hay cuenta publicitaria) |
 
 ## Datos operativos

@@ -311,6 +311,12 @@ a.btn.primary{color:#fff}
 .ad-pat{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
 .cam-links{display:flex;flex-wrap:wrap;gap:6px;font-size:13px}
 .cam-links a{color:var(--blue)}
+.rc-fmts{border:0;margin:0;padding:0;min-width:0}
+.f-legend{font-size:12px;font-family:var(--f-mono);letter-spacing:.06em;color:var(--muted);text-transform:uppercase;padding:0;margin-bottom:8px}
+.rc-out{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:0 12px}
+.rc-out summary{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;cursor:pointer;font-weight:600}
+.rc-out[open]{padding-bottom:12px}
+.rc-out .guion{max-height:420px}
 </style>
 
 <aside class="side" aria-label="Navegación">
@@ -326,6 +332,7 @@ a.btn.primary{color:#fff}
     <a href="#carruseles" data-tab="carruseles" data-ico="carruseles"><span class="lb">Carruseles</span><span class="count" id="n-car"></span></a>
     <a href="#historias" data-tab="historias" data-ico="historias"><span class="lb">Historias</span><span class="count" id="n-his"></span></a>
     <a href="#reels" data-tab="reels" data-ico="reels"><span class="lb">Reels virales</span><span class="count" id="n-reels"></span></a>
+    <a href="#reciclar" data-tab="reciclar" data-ico="reciclar"><span class="lb">Reciclar episodio</span><span class="count" id="n-rc"></span></a>
     <a href="#ideas" data-tab="ideas" data-ico="ideas"><span class="lb">Ideas</span><span class="count" id="n-ideas"></span></a>
     <div class="grp">Investigar</div>
     <a href="#tendencias" data-tab="tendencias" data-ico="tendencias"><span class="lb">Tendencias</span></a>
@@ -579,6 +586,40 @@ a.btn.primary{color:#fff}
       </div>
       <div class="filters" id="r-filter" role="group" aria-label="Filtrar reels"></div>
       <div class="cards" id="reels"></div>
+    </div>
+  </section>
+
+  <!-- RECICLAR -->
+  <section id="v-reciclar" data-view hidden>
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Un episodio, toda la semana</div>
+        <h1>Reciclar episodio</h1>
+        <p class="lede">Pegá la transcripción de un episodio de Tu Mejor Versión. Claude saca clips cortos, ideas para Instagram y TikTok, títulos y descripción para YouTube y Spotify, blog para weholos.com y, si querés, newsletter, LinkedIn, Threads y Pinterest.</p>
+      </div>
+      <span class="muted" id="rc-sub" style="font-size:14px"></span>
+    </div>
+    <div class="stack">
+      <form class="panel stack" id="rc-form">
+        <div class="grid-form" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+          <label class="f" for="rc-titulo">Episodio<input type="text" id="rc-titulo" required placeholder="Ej.: #1 Inteligencia emocional"></label>
+          <label class="f" for="rc-invitado">Especialista invitado/a<input type="text" id="rc-invitado" placeholder="Ej.: Pata Liberati"></label>
+          <label class="f" for="rc-link">Link del episodio (opcional)<input type="url" id="rc-link" placeholder="https://open.spotify.com/…"></label>
+        </div>
+        <label class="f" for="rc-trans">Transcripción<textarea id="rc-trans" required style="min-height:200px" placeholder="Pegá acá la transcripción completa, con marcas de tiempo si las tiene (por ejemplo 00:12:30). También podés subir un archivo .txt, .srt o .vtt."></textarea></label>
+        <div class="row" style="gap:10px">
+          <label class="btn small" for="rc-file" style="cursor:pointer">Subir archivo<input type="file" id="rc-file" accept=".txt,.srt,.vtt,text/plain" style="position:absolute;width:1px;height:1px;opacity:0"></label>
+          <span class="muted mono" id="rc-count" style="font-size:12px"></span>
+        </div>
+        <fieldset class="rc-fmts">
+          <legend class="f-legend">Formatos</legend>
+          <div class="row" id="rc-fmts" style="gap:8px"></div>
+        </fieldset>
+        <div class="row"><button class="btn primary" type="submit" id="rc-go">Reciclar con Claude</button><span class="muted" style="font-size:13px">Usa la voz, las reglas y los pilares de Weholos. Cada formato tarda entre 20 y 60 segundos.</span></div>
+      </form>
+      <div id="rc-live" class="stack" hidden></div>
+      <h2 class="sub">Episodios reciclados</h2>
+      <div class="cards" id="rc-list"></div>
     </div>
   </section>
 
@@ -887,7 +928,7 @@ a.btn.primary{color:#fff}
   function fail(e) { toast(e && e.code === 'quota_exceeded' ? 'El panel llegó a su límite de registros: borrá algunos viejos' : 'No se pudo guardar. Probá de nuevo.'); }
 
   /* ---------- Rutas ---------- */
-  const TABS = ['inicio', 'aprobar', 'mes', 'metricas', 'carruseles', 'calendario', 'reels', 'ideas', 'historias', 'tendencias', 'campanas'];
+  const TABS = ['inicio', 'aprobar', 'mes', 'metricas', 'carruseles', 'calendario', 'reels', 'reciclar', 'ideas', 'historias', 'tendencias', 'campanas'];
   function route() {
     const hh = location.hash.replace('#', '');
     const tab = TABS.includes(hh) ? hh : 'inicio';
@@ -1269,7 +1310,7 @@ a.btn.primary{color:#fff}
   $('#rules-form').addEventListener('input', () => { UI.rulesDirty = true; });
   $('#rules-form').addEventListener('submit', async (e) => {
     e.preventDefault(); if (!requireDb()) return;
-    try { await db.doc('config/reglas').set({ base: $('#r-base').value.trim(), carrusel: $('#r-carrusel').value.trim(), historias: $('#r-historias').value.trim(), extra: $('#r-extra').value.trim(), actualizado: new Date().toISOString() }); UI.rulesDirty = false; toast('Reglas guardadas'); } catch (err) { fail(err); }
+    try { await db.doc('config/reglas').set(Object.assign({}, S.config || {}, { base: $('#r-base').value.trim(), carrusel: $('#r-carrusel').value.trim(), historias: $('#r-historias').value.trim(), extra: $('#r-extra').value.trim(), actualizado: new Date().toISOString() })); UI.rulesDirty = false; toast('Reglas guardadas'); } catch (err) { fail(err); }
   });
   $('#r-reset').addEventListener('click', () => {
     if (UI.confirmDel !== 'rules') { UI.confirmDel = 'rules'; $('#r-reset').textContent = 'Confirmar: vuelve el texto original'; setTimeout(() => { if (UI.confirmDel === 'rules') { UI.confirmDel = null; $('#r-reset').textContent = 'Restaurar reglas originales'; } }, 3000); return; }
@@ -2192,6 +2233,123 @@ a.btn.primary{color:#fff}
   });
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-dis]'); if (b) { e.stopPropagation(); openDiseno(b.dataset.dis); } }, true);
 
+  /* ---------- Reciclar episodio ---------- */
+  const RC_MAX = 90000;
+  const RC_FMTS = [
+    { k: 'clips', l: 'Clips cortos', on: true, inst: 'CLIPS CORTOS. Volvé a la transcripción y elegí de 5 a 8 momentos EXACTOS que funcionen como clips de menos de 60 segundos, que se entiendan solos sin ver el episodio. Priorizá: un gancho fuerte o una afirmación que frene el scroll, una historia u opinión personal, un consejo concreto o un cambio de mirada, una frase citable. Para cada clip: TÍTULO DEL CLIP (corto, como gancho) · INICIO APROXIMADO (usá las marcas de tiempo si existen; si no, "sin marca de tiempo") · DURACIÓN ESTIMADA · CITA EXACTA (copiada de la transcripción, sin corregir el sentido) · TEXTO EN PANTALLA para los primeros 3 segundos (máximo 8 palabras) · POR QUÉ FUNCIONA (gancho, identificación, potencial visual). Atribuí cada cita a quien la dijo.' },
+    { k: 'instagram', l: 'Instagram', on: true, inst: 'INSTAGRAM. Generá 20 ideas sacadas de frases, historias y conceptos ESPECÍFICOS del episodio (nada genérico), numeradas y agrupadas: 5 POSTS (imagen única, texto o frase del invitado), 5 CARRUSELES, 5 REELS (voz en off o a cámara; indicá cuál conviene) y 5 HISTORIAS (secuencias con sticker). En cada idea: título, la frase o el concepto del episodio de donde sale, y la serie de Weholos donde encaja (¿A ti también te pasa?, Algo que aprendimos en Weholos, Tu momento Weholos, La comunidad responde o Tu Mejor Versión). Después, desarrollá completas las 3 mejores (una de carrusel, una de reel y una de historias): FORMATO · CONCEPTO VISUAL · GUION O COPY (carrusel: texto de cada slide con titular en la 1 y CTA en la última; reel: guion de 15 a 30 segundos con GANCHO, CUERPO y CTA; historias: cuántas pantallas y qué va en cada una, con encuestas o preguntas) · CAPTION (con saltos de línea, emojis con moderación y 3 a 5 hashtags descriptivos en español al final).' },
+    { k: 'tiktok', l: 'TikTok', on: true, inst: 'TIKTOK. Generá 20 ideas sacadas de frases o conceptos ESPECÍFICOS del episodio, en dos grupos: 10 B-ROLL + TEXTO EN PANTALLA (texto exacto de 10 a 15 palabras sacado de algo que se dijo, el tipo de b-roll cotidiano que lo acompaña y el tipo de audio en tendencia) y 10 A CÁMARA O VOZ EN OFF (GANCHO de 3 segundos, MENSAJE con 1 o 2 puntos o una mini historia, CTA, y apoyo visual). Después desarrollá completas las 3 mejores con FORMATO · CONCEPTO VISUAL · GUION O TEXTO · CAPTION (con saltos de línea y emojis, sin hashtags).' },
+    { k: 'youtube', l: 'YouTube', on: true, inst: 'YOUTUBE (episodio completo). 1) PALABRAS CLAVE: al menos 10, mezcla de cortas (1 o 2 palabras) y long tail (4 a 6 o más palabras, como búsquedas reales en español: "cómo dejar de sentir culpa por descansar"), en una sola oración separadas por comas, sin viñetas. 2) TÍTULOS: 5 títulos con palabras clave, que se busquen y emocionen, sin sonar robóticos ni genéricos; variá el formato (lista, por qué, cómo, contraintuitivo, curiosidad). Evitá títulos tipo "Charla sobre bienestar". 3) DESCRIPCIÓN: 3 a 5 oraciones que resuman el episodio con todas las palabras clave integradas de forma natural; mencioná al especialista invitado; al final 3 hashtags para categorizar.' },
+    { k: 'podcast', l: 'Spotify', on: true, inst: 'PODCAST (Spotify y otras plataformas). Siempre en este orden: 1) TÍTULOS: 5 títulos de episodio de menos de 70 caracteres, con palabras clave y beneficio claro (qué aprende o resuelve quien escucha); nada de "Charlamos sobre…". 2) DESCRIPCIÓN: menos de 200 palabras centradas en lo que se lleva quien escucha, más una lista de recursos mencionados (libros, autores, herramientas, sitios); si no hay, escribí "No hay links ni recursos mencionados en este episodio". 3) NOTAS DEL EPISODIO: 500 a 700 palabras con valor propio, como un mini artículo: un gancho o insight inicial, un párrafo de resumen y después secciones con títulos claros y párrafos cortos.' },
+    { k: 'blog', l: 'Blog weholos.com', on: true, inst: 'BLOG para weholos.com (categorías Cuerpo, Mente o Espíritu; indicá cuál). Escribí como redactor de blog con criterio SEO: 1) 5 TÍTULOS con palabras clave. 2) META DESCRIPCIÓN de hasta 160 caracteres con palabras clave fuertes. 3) ARTÍCULO de al menos 1.500 palabras en primera persona del plural (nosotros, en Weholos), conversacional, con H2 y H3 que alguien escribiría en Google (nada de "Reflexiones finales"); cada sección abre con 2 a 4 oraciones antes de entrar en detalle; viñetas solo si una lista es lo más natural. Citá al especialista invitado tal como habló y cerrá con una invitación a escuchar el episodio completo. Sin cifras ni estudios que no estén en la transcripción.' },
+    { k: 'newsletter', l: 'Newsletter', on: false, inst: 'NEWSLETTER (para cuando Weholos tenga lista de correo). Un mail que tenga valor por sí solo aunque nunca abran el episodio. Usá palabras, frases y tono de la transcripción; frases cortas, muchos saltos de línea para leer en el celular; flujo gancho → historia o concepto → aprendizaje → un solo CTA suave al final para escuchar el episodio. Entregá: 3 ASUNTOS claros y con curiosidad (sin clickbait), 3 TEXTOS DE VISTA PREVIA (una oración de 40 a 140 caracteres), y el CUERPO de 800 a 1.000 palabras con marcas como [Insertar miniatura del episodio]. No repitas aperturas ni metáforas trilladas.' },
+    { k: 'linkedin', l: 'LinkedIn', on: false, inst: 'LINKEDIN. 15 posts sacados del episodio, con voz de persona real, clara y con opinión, nada formal ni motivacional: 5 CORTOS (1 a 3 oraciones: frase fuerte, idea polémica o pregunta), 5 MEDIOS (150 a 250 palabras: micro historia u opinión, con saltos de línea) y 5 LARGOS (hasta 500 palabras: gancho fuerte, perspectiva propia, punto claro y CTA suave tipo "¿A ti también te pasa? Te leemos"). Al menos 2 con historia o perspectiva personal. Sin emojis ni hashtags. Sin muletillas como "Quiero hablar de…".' },
+    { k: 'threads', l: 'Threads', on: false, inst: 'THREADS / X. 30 posts nativos de la plataforma, que funcionen solos y generen respuestas: 10 TIPO CITA (frases exactas o momentos potentes, menos de 150 caracteres), 10 MEDIOS (2 a 4 oraciones: mini historia, perspectiva o verdad incómoda, con algo de humor o vulnerabilidad) y 10 CONSEJO O REFLEXIÓN (ideas prácticas o marcos simples inspirados en el episodio). Variá largo y estructura. Sin hashtags. No resumas el episodio.' },
+    { k: 'pinterest', l: 'Pinterest', on: false, inst: 'PINTEREST. 10 pines sacados del episodio. Para cada uno, en bloques numerados: TEXTO DEL PIN (lo que va en el diseño) · TÍTULO (60 a 100 caracteres, con palabras clave que alguien buscaría en Pinterest) · DESCRIPCIÓN (100 a 500 caracteres, descripción simple de lo que entrega el pin; sin hashtags, emojis ni CTA). Cada pin único, nada de descripciones repetidas con cambios mínimos.' }
+  ];
+  S.reciclajes = [];
+  UI.rc = { busy: false, live: {}, open: null, saved: {} };
+  function rcInst(k) { const c = (S.config && S.config.reciclaje) || {}; const f = RC_FMTS.find((x) => x.k === k); return (typeof c[k] === 'string' && c[k].trim()) || (f ? f.inst : ''); }
+  function rcPrompt(ep, k) {
+    return reglasActuales('Reel') + '\n\nPILARES Y SERIES DE WEHOLOS\n' + S.pilares.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0)).map((p) => '- ' + p.nombre + ': ' + (p.descripcion || '') + (p.cta ? ' CTA: ' + p.cta : '')).join('\n') +
+      '\n\nTAREA: reciclar un episodio del podcast Tu Mejor Versión de Weholos.\nEPISODIO: ' + ep.titulo + (ep.invitado ? '\nESPECIALISTA INVITADO/A: ' + ep.invitado : '') + (ep.link ? '\nLINK: ' + ep.link : '') +
+      '\n\nREGLAS DE RECICLAJE: sacá todo de la transcripción (frases, historias, ejemplos); no inventes datos, cifras, estudios ni frases que nadie dijo; atribuí las citas a quien las dijo; respetá la voz de Weholos (tuteo) aunque la transcripción tenga voseo, salvo en las citas textuales. Respondé en texto plano (sin markdown, sin tablas, sin asteriscos), con títulos de sección en MAYÚSCULAS.\n\n' +
+      rcInst(k) + '\n\nTRANSCRIPCIÓN\n"""\n' + ep.transcripcion + '\n"""';
+  }
+  function rcFmtLabel(k) { const f = RC_FMTS.find((x) => x.k === k); return f ? f.l : k; }
+  function rcSel() { return RC_FMTS.filter((f) => { const c = $('#rcf-' + f.k); return c && c.checked; }).map((f) => f.k); }
+  function rcOutCard(epId, k, text, busy) {
+    return '<details class="rc-out"' + (busy ? ' open' : '') + '><summary><span>' + esc(rcFmtLabel(k)) + '</span>' + (busy ? '<span class="pill st-guion">Escribiendo…</span>' : '<span class="muted mono" style="font-size:12px">' + (text ? text.split(/\s+/).length + ' palabras' : '') + '</span>') + '</summary>' +
+      '<pre class="guion" id="rco-' + esc(epId) + '-' + k + '">' + esc(text || '') + '</pre>' +
+      (busy ? '' : '<div class="row" style="gap:6px"><button class="btn small" type="button" data-rccopy="' + esc(epId) + '|' + k + '">Copiar</button><button class="btn small" type="button" data-rcregen="' + esc(epId) + '|' + k + '">Rehacer</button></div>') + '</details>';
+  }
+  function renderReciclar() {
+    if (!$('#v-reciclar')) return;
+    if (!$('#rc-fmts').children.length) $('#rc-fmts').innerHTML = RC_FMTS.map((f) => '<label class="chk" for="rcf-' + f.k + '"><input type="checkbox" id="rcf-' + f.k + '"' + (f.on ? ' checked' : '') + '>' + esc(f.l) + '</label>').join('');
+    const n = S.reciclajes.length; $('#n-rc').textContent = n || '';
+    $('#rc-sub').textContent = n ? n + (n === 1 ? ' episodio reciclado' : ' episodios reciclados') : '';
+    const list = S.reciclajes.slice().sort((a, b) => (b.creado || '') < (a.creado || '') ? -1 : 1);
+    $('#rc-list').innerHTML = list.length ? list.map((r) => {
+      const out = r.formatos || {}; const ks = RC_FMTS.map((f) => f.k).filter((k) => out[k] || (UI.rc.live[r.id] || {})[k] != null);
+      const isOpen = UI.rc.open === r.id;
+      return '<div class="card"><div class="row" style="justify-content:space-between;gap:10px"><div style="min-width:0"><div class="t" style="font-weight:700">' + esc(r.titulo || 'Episodio') + '</div><div class="muted" style="font-size:13px">' + (r.invitado ? esc(r.invitado) + ' · ' : '') + esc(String(r.creado || '').slice(0, 10)) + ' · ' + ks.length + ' formatos' + (r.ideas_enviadas ? ' · ' + r.ideas_enviadas + ' ideas en el banco' : '') + '</div></div>' +
+        '<div class="row" style="gap:6px"><button class="btn small" type="button" data-rcopen="' + esc(r.id) + '">' + (isOpen ? 'Cerrar' : 'Ver') + '</button><button class="btn small primary" type="button" data-rcideas="' + esc(r.id) + '"' + (UI.rc.busy ? ' disabled' : '') + '>Pasar ideas al banco</button><button class="btn small danger" type="button" data-rcdel="' + esc(r.id) + '">' + (UI.confirmDel === 'rc' + r.id ? 'Confirmar' : 'Borrar') + '</button></div></div>' +
+        (isOpen ? '<div class="stack" style="gap:8px">' + ks.map((k) => { const lv = (UI.rc.live[r.id] || {})[k]; return rcOutCard(r.id, k, lv != null ? lv : out[k], lv != null); }).join('') + '</div>' : '') + '</div>';
+    }).join('') : '<div class="empty"><b>Todavía no reciclaste ningún episodio</b>Pegá una transcripción arriba. El primer candidato: #1 Inteligencia Emocional.</div>';
+  }
+  async function rcFormato(id, ep, k) {
+    UI.rc.live[id] = UI.rc.live[id] || {}; UI.rc.live[id][k] = ''; UI.rc.open = id; renderReciclar();
+    const res = await sampleFn(rcPrompt(ep, k), { cache: false, modelTier: 'complex', onText: ({ text }) => { UI.rc.live[id][k] = text; const el = $('#rco-' + id + '-' + k); if (el) el.textContent = text; } });
+    const text = (res && res.text) || UI.rc.live[id][k] || '';
+    UI.rc.saved[id] = Object.assign({}, (S.reciclajes.find((x) => x.id === id) || {}).formatos || {}, UI.rc.saved[id] || {}, { [k]: text });
+    await db.collection('reciclajes').doc(id).update({ formatos: UI.rc.saved[id], actualizado: new Date().toISOString() });
+    delete UI.rc.live[id][k];
+  }
+  $('#rc-trans').addEventListener('input', () => { const n = $('#rc-trans').value.length; $('#rc-count').textContent = n ? n.toLocaleString('es-AR') + ' caracteres' + (n > RC_MAX ? ' · se usan los primeros ' + RC_MAX.toLocaleString('es-AR') : '') : ''; });
+  $('#rc-file').addEventListener('change', async () => {
+    const f = $('#rc-file').files[0]; if (!f) return;
+    try { let t = await f.text(); if (/\.(srt|vtt)$/i.test(f.name)) t = t.replace(/^WEBVTT.*$/m, '').replace(/^\d+\s*$/gm, '').replace(/(\d\d:\d\d:\d\d)[.,]\d+ --> [\d:.,]+/g, '[$1]').replace(/\n{2,}/g, '\n').trim(); $('#rc-trans').value = t; $('#rc-trans').dispatchEvent(new Event('input')); if (!$('#rc-titulo').value) $('#rc-titulo').value = f.name.replace(/\.[^.]+$/, ''); toast('Transcripción cargada'); }
+    catch (err) { toast('No se pudo leer el archivo. Probá con un .txt'); }
+    $('#rc-file').value = '';
+  });
+  $('#rc-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!sampleFn) { toast('La generación con Claude no está disponible en esta vista'); return; }
+    if (!requireDb() || UI.rc.busy) return;
+    const fmts = rcSel(); if (!fmts.length) { toast('Elegí al menos un formato'); return; }
+    const ep = { titulo: $('#rc-titulo').value.trim(), invitado: $('#rc-invitado').value.trim(), link: $('#rc-link').value.trim(), transcripcion: $('#rc-trans').value.trim().slice(0, RC_MAX) };
+    if (ep.transcripcion.length < 400) { toast('La transcripción es muy corta para reciclar'); return; }
+    UI.rc.busy = true; $('#rc-go').disabled = true; $('#rc-go').textContent = 'Reciclando…';
+    let id = null;
+    try {
+      const r = await db.collection('reciclajes').add(Object.assign({}, ep, { formatos: {}, creado: new Date().toISOString() })); id = r.id;
+      $('#rc-trans').value = ''; $('#rc-count').textContent = '';
+      for (const k of fmts) { await rcFormato(id, ep, k); renderReciclar(); }
+      toast('Episodio reciclado: ' + fmts.length + ' formatos listos');
+    } catch (err) {
+      if (err && HIDE_CODES.includes(err.code)) sampleFn = null;
+      toast((err && ERR_SAMPLE[err.code]) || 'Se cortó la generación. Lo que ya estaba listo quedó guardado.');
+      if (id) UI.rc.live[id] = {};
+    } finally { UI.rc.busy = false; $('#rc-go').disabled = false; $('#rc-go').textContent = 'Reciclar con Claude'; renderReciclar(); }
+  });
+  $('#rc-list').addEventListener('click', async (e) => {
+    const t = e.target;
+    const o = t.closest('[data-rcopen]'); if (o) { UI.rc.open = UI.rc.open === o.dataset.rcopen ? null : o.dataset.rcopen; renderReciclar(); return; }
+    const c = t.closest('[data-rccopy]'); if (c) { const [id, k] = c.dataset.rccopy.split('|'); const r = S.reciclajes.find((x) => x.id === id); copy(((r || {}).formatos || {})[k] || '', c); return; }
+    const g = t.closest('[data-rcregen]'); if (g) {
+      if (!sampleFn) { toast('La generación con Claude no está disponible en esta vista'); return; }
+      if (!requireDb() || UI.rc.busy) return; const [id, k] = g.dataset.rcregen.split('|'); const r = S.reciclajes.find((x) => x.id === id); if (!r) return;
+      UI.rc.busy = true; try { await rcFormato(id, r, k); toast(rcFmtLabel(k) + ': nueva versión guardada'); } catch (err) { if (err && HIDE_CODES.includes(err.code)) sampleFn = null; toast((err && ERR_SAMPLE[err.code]) || 'No se pudo rehacer. Probá de nuevo.'); UI.rc.live[id] = {}; } finally { UI.rc.busy = false; renderReciclar(); }
+      return;
+    }
+    const d = t.closest('[data-rcdel]'); if (d) {
+      if (!requireDb()) return; const id = d.dataset.rcdel;
+      if (UI.confirmDel !== 'rc' + id) { UI.confirmDel = 'rc' + id; renderReciclar(); setTimeout(() => { if (UI.confirmDel === 'rc' + id) { UI.confirmDel = null; renderReciclar(); } }, 4000); return; }
+      UI.confirmDel = null; try { await db.collection('reciclajes').doc(id).delete(); toast('Episodio borrado'); } catch (err) { fail(err); } return;
+    }
+    const iv = t.closest('[data-rcideas]'); if (iv) {
+      if (!sampleFn) { toast('La generación con Claude no está disponible en esta vista'); return; }
+      if (!requireDb() || UI.rc.busy) return; const r = S.reciclajes.find((x) => x.id === iv.dataset.rcideas); if (!r) return;
+      const src = ['clips', 'instagram', 'tiktok'].map((k) => (r.formatos || {})[k] ? rcFmtLabel(k).toUpperCase() + '\n' + r.formatos[k] : '').filter(Boolean).join('\n\n');
+      if (!src) { toast('Primero generá Clips, Instagram o TikTok para este episodio'); return; }
+      UI.rc.busy = true; iv.disabled = true; iv.textContent = 'Eligiendo ideas…';
+      try {
+        const pil = S.pilares.map((p) => p.nombre);
+        const out = await sampleFn.json(reglasActuales('Reel') + '\n\nDe este material reciclado del episodio "' + r.titulo + '"' + (r.invitado ? ' con ' + r.invitado : '') + ', elegí las 6 mejores piezas para el calendario de Weholos: 2 reels, 3 carruseles y 1 secuencia de historias, con variedad de series. Para cada una escribí el guion completo listo para producir (reel: GANCHO, CUERPO y CTA con 45 a 60 segundos de texto hablado y sugerencias visuales; carrusel: una línea por slide [S1]…[Sn] y CAPTION; historias: una línea por pantalla con sticker). Las citas del invitado, textuales y atribuidas.\n\nSeries válidas (usá el nombre exacto): ' + pil.join(' | ') + '\n\nMATERIAL\n' + src.slice(0, 60000) +
+          '\n\nRespondé solo con un objeto JSON: {"ideas": [{"titulo": string, "formato": "Reel" | "Carrusel" | "Historia", "video": "explicativo" | "camara" (solo reels; los clips del podcast son camara), "serie": string, "guion": string}]}', { cache: false, modelTier: 'complex' });
+        const ideas = (out && Array.isArray(out.ideas) ? out.ideas : []).filter((x) => x && x.titulo && x.guion).slice(0, 8);
+        if (!ideas.length) throw { code: 'invalid_json' };
+        for (const x of ideas) {
+          const p = S.pilares.find((q) => q.nombre === x.serie) || null; const fm = ['Reel', 'Carrusel', 'Historia'].includes(x.formato) ? x.formato : 'Reel';
+          await db.collection('ideas').add({ texto: String(x.titulo).slice(0, 200), titulo: String(x.titulo).slice(0, 140), tipo: 'Episodio', formato: fm, video: fm === 'Reel' ? (x.video === 'explicativo' ? 'explicativo' : 'camara') : null, pilar: p ? p.id : null, pilar_nombre: p ? p.nombre : null, guion: String(x.guion), origen: 'podcast', episodio: r.id, creado: new Date().toISOString() });
+        }
+        await db.collection('reciclajes').doc(r.id).update({ ideas_enviadas: (r.ideas_enviadas || 0) + ideas.length });
+        toast(ideas.length + ' ideas con guion en el banco: el CM ya las puede usar');
+      } catch (err) { if (err && HIDE_CODES.includes(err.code)) sampleFn = null; toast((err && ERR_SAMPLE[err.code]) || 'No se pudieron pasar las ideas. Probá de nuevo.'); }
+      finally { UI.rc.busy = false; renderReciclar(); }
+    }
+  });
+
   /* ---------- Formato de video: explicativo vs a cámara ---------- */
   const VID = { explicativo: 'Explicativo', camara: 'A cámara' };
   function sugerirVideo(t) {
@@ -2662,6 +2820,7 @@ a.btn.primary{color:#fff}
     tendencias: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
     metricas: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
     campanas: '<path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 9a3 3 0 0 1 0 6M19 6a7 7 0 0 1 0 12"/>',
+    reciclar: '<path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/><path d="M19 4l2-1M19 8l2 1"/>',
     plus: '<path d="M12 5v14M5 12h14"/>', flujo: '<path d="M4 6h16M4 12h10M4 18h6"/>', reloj: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
   };
   const ico = (k, s) => '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICO[k] || '') + '</svg>';
@@ -2720,14 +2879,14 @@ a.btn.primary{color:#fff}
     db.collection(name).onSnapshot((snap) => { S[name] = snap.docs.map((d) => Object.assign({ id: d.id }, d.data())); render(); renderInicio(); if (name !== 'meses' && name !== 'metrics') renderMes(); },
       () => { $('#offline').hidden = false; });
   }
-  route(); renderAll(); renderRules(true); renderInicio();
+  route(); renderAll(); renderReciclar(); renderRules(true); renderInicio();
   const c = window.claude;
   if (!c || !c.use) { $('#offline').hidden = false; }
   else {
     c.use('db').then((d) => {
       if (!d) { $('#offline').hidden = false; return; }
       db = d;
-      sub('metrics', renderMetrics); sub('posts', renderCal); sub('reels', renderReels); sub('ideas', renderIdeas); sub('pilares', renderIdeas); sub('meses', renderMes); sub('disenos', renderMes); sub('historias', renderHistorias); sub('campanas', renderCampanas);
+      sub('metrics', renderMetrics); sub('posts', renderCal); sub('reels', renderReels); sub('ideas', renderIdeas); sub('pilares', renderIdeas); sub('meses', renderMes); sub('disenos', renderMes); sub('historias', renderHistorias); sub('campanas', renderCampanas); sub('reciclajes', renderReciclar);
       db.doc('config/reglas').onSnapshot((snap) => { S.config = snap.exists ? snap.data() : null; renderRules(); }, () => {});
       db.doc('config/meta').onSnapshot((snap) => { S.meta = snap.exists ? snap.data() : null; renderWeek(); }, () => {});
       db.doc('config/ads').onSnapshot((snap) => { S.ads = snap.exists ? snap.data() : null; renderCampanas(); }, () => {});
@@ -2736,7 +2895,7 @@ a.btn.primary{color:#fff}
       db.doc('config/plan').onSnapshot((snap) => { S.plan = snap.exists ? snap.data() : null; renderPlan(); }, () => {});
     }).catch(() => { $('#offline').hidden = false; });
     c.use('downloads').then((d) => { dlFn = d || null; }).catch(() => {});
-    c.use('sample').then((s) => { if (s) { sampleFn = s; renderIdeas(); renderReels(); renderMes(); } }).catch(() => {});
+    c.use('sample').then((s) => { if (s) { sampleFn = s; renderIdeas(); renderReels(); renderMes(); renderReciclar(); } }).catch(() => {});
   }
 })();
 </script>

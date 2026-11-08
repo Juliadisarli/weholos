@@ -96,6 +96,14 @@ Campos clave:
 - `meses/<AAAA-MM>.slots.<clave>`: {ref "col|id|campo", titulo, pilar, motivo, video, por, fijo, post_id}.
 - `campanas`: {tipo promocionar|nuevo, pieza {titulo, ref, link}, inspiracion [{page_name, url}], objetivo, hipotesis, publico, presupuesto_diario, duracion_dias, kpi, creatividades, pasos, estado, resultados, meta_ad_id}.
 
+## Fase 3b · Radar inicial
+
+Antes de crear las tareas, armá el primer radar para que Tendencias no arranque vacío y el CM tenga material. Leé `references/radar-inicial.md` y seguí su método:
+- si la marca ya tiene un radar (`claude/radar-<marca>.md` o `claude/recursos-*-tendencias.md`), partí de él;
+- si el nicho ya tiene fuentes en ese archivo, usalas; si no, investigá y sumá el nicho nuevo al archivo;
+- guardá el doc de la marca y cargá `config/radar` con las cuentas en estado "propuesta";
+- en el mensaje, resumí de 3 a 5 tendencias con su encaje y qué conviene evitar.
+
 ## Fase 4 · Conectores
 
 Revisá qué hay conectado y decí qué falta. No se bloquea el armado por esto.
@@ -124,7 +132,7 @@ Usá minutos que no sean en punto. Si la tarea necesita la compu, va en el horar
 | Reels virales → guiones | Lun a sáb | Sí | Hasta 3 reels nuevos de la colección: transcribe, analiza y escribe un guion NUEVO para la marca (mecánica viral, no contenido). Curaduría 1 a 10; los de 7 o más llevan derivados (reel corto, 2 carruseles, historias). No escribe en meses |
 | Métricas semanales | Lunes | Sí | metrics/<lunes>, res de cada post y aprendizajes por formato, formato de video y pilar en config/plan |
 | Alerta de constancia | Jueves a la mañana | No | Avisa solo si la semana viene atrasada |
-| Analista de tendencias | Sábados | Sí | Búsquedas web, config/radar, cuentas de referencia (propone; mira solo las aprobadas) e ideas con guion |
+| Analista de tendencias | Sábados | Sí | Sigue `references/radar-inicial.md`: parte del radar de la marca, hace búsquedas web, actualiza config/radar (conserva el estado de las cuentas) y el doc `claude/radar-<marca>.md`, mira solo las cuentas aprobadas y suma ideas con guion |
 | CM mensual | Día 20 | No | Arma los 12 lugares del mes siguiente: brief, progresión alcance → autoridad → venta, carruseles del reel de la semana, al menos 2 piezas de venta, formato de video en cada reel (a cámara con guion en primera persona), diseños en `disenos` y 12 historias. No toca lugares fijos ni aprobados. No crea posts |
 | Mail mensual | Día 21 a la mañana | No | UN mail solo al mail de la marca: lo que hay que aprobar (link #aprobar), lo que hay que hacer a mano (videos a cámara con gancho y viñetas, historias para grabar) y lo que hace Claude |
 | Experto en campañas | Miércoles | No | Solo lectura en Meta (ads_get_* y ads_library_search, scheduled_task_run: true, sin offer_report). Actualiza config/ads.anuncios, investiga la Biblioteca (días activo y variantes como señal; no inventa gasto ni conversiones), escribe config/ads_refs con las URLs tal cual y deja 2 propuestas (promocionar + nuevo con inspiración) |

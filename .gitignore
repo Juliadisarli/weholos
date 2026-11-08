@@ -1,0 +1,9 @@
+# Videos: superan o rozan el límite de 100 MB de GitHub
+*.mp4
+*.mov
+# Repo git aparte (OpenKnowledge) con estado local
+universoweholos/
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store

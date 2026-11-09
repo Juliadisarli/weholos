@@ -404,12 +404,37 @@ a.btn.primary{color:#fff}
       <div>
         <div class="eyebrow">Meta · Instagram y Facebook</div>
         <h1>Métricas semanales</h1>
-        <p class="lede">Las semanas se cargan solas desde tu cuenta de Instagram. Gasto y registros se pueden completar a mano.</p>
+        <p class="lede">Arriba, la publicidad de Weholos en Meta. Abajo, las semanas orgánicas de Instagram, que se cargan solas o a mano.</p>
       </div>
       <span class="pill st-listo">Fuente: API de Meta</span>
     </div>
 
     <div class="stack">
+      <div class="panel stack" id="ads-box" aria-labelledby="h-ads">
+        <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="min-width:0">
+            <h2 id="h-ads">Publicidad en Meta · Weholos</h2>
+            <p class="muted" id="ads-sub" style="margin:4px 0 0;font-size:13px">Conectá la cuenta publicitaria para ver acá la inversión y los resultados de los anuncios de la página.</p>
+          </div>
+          <div class="row" style="gap:8px">
+            <div class="seg" id="ads-per" role="group" aria-label="Período"></div>
+            <a class="btn small" id="ads-am" href="#" target="_blank" rel="noopener" hidden>Abrir Ads Manager</a>
+          </div>
+        </div>
+        <div class="kpis" id="ads-kpis"></div>
+        <div class="row" style="justify-content:space-between">
+          <h3 style="margin:0;font-size:15px">Por mes</h3>
+          <div class="seg" id="ads-seg" role="group" aria-label="Métrica del gráfico de anuncios"></div>
+        </div>
+        <div class="chart-box" id="ads-chart"></div>
+        <div class="row" style="justify-content:space-between">
+          <h3 style="margin:0;font-size:15px">Anuncios</h3>
+          <div class="seg" id="ads-sort" role="group" aria-label="Ordenar anuncios"></div>
+        </div>
+        <div class="table-box" id="ads-table"></div>
+        <p class="muted" style="margin:0;font-size:12px">Fuente: Meta Ads, solo lectura. La cuenta es compartida: se cuentan solo los anuncios publicados desde la página Weholos. "Seguidores" son los seguidores de Instagram que Meta atribuye a los anuncios.</p>
+      </div>
+      <h2 style="margin:8px 0 0">Orgánico · semana a semana</h2>
       <div class="kpis" id="kpis"></div>
 
       <div class="panel stack">
@@ -2350,6 +2375,77 @@ a.btn.primary{color:#fff}
     }
   });
 
+  /* ---------- Métricas: publicidad en Meta ---------- */
+  const ADS_PER = [['todo', 'Histórico'], ['12m', '12 meses'], ['3m', '3 meses'], ['mes', 'Este mes']];
+  const ADS_MET = [['gasto', 'Inversión'], ['seguidores', 'Seguidores'], ['impresiones', 'Impresiones'], ['clics', 'Clics al enlace'], ['interacciones', 'Interacciones']];
+  const ADS_SORT = [['creado', 'Recientes'], ['seguidores', 'Más seguidores'], ['cps', 'Menor costo por seguidor'], ['gasto', 'Mayor inversión']];
+  UI.adsPer = 'todo'; UI.adsMet = 'gasto'; UI.adsSort = 'creado';
+  const fmtMon = (n, cur) => n == null || isNaN(n) ? '—' : (cur || 'ARS') + ' ' + Number(n).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+  const MES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function adsMeses(mensual) {
+    if (!mensual.length) return [];
+    const by = {}; mensual.forEach((m) => { by[m.mes] = m; });
+    const [y0, m0] = mensual[0].mes.split('-').map(Number); const now = new Date(); const out = [];
+    for (let y = y0, m = m0; y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth() + 1); m === 12 ? (y++, m = 1) : m++) {
+      const k = y + '-' + String(m).padStart(2, '0'); out.push(by[k] || { mes: k, gasto: 0, impresiones: 0, seguidores: 0, clics: 0, interacciones: 0, anuncios: 0 });
+    }
+    return out;
+  }
+  function renderAdsMetrics() {
+    if (!$('#ads-box')) return;
+    const a = S.ads || {}; const cur = a.moneda || 'ARS';
+    const meses = adsMeses(Array.isArray(a.mensual) ? a.mensual : []);
+    $('#ads-per').innerHTML = ADS_PER.map(([k, l]) => '<button type="button" data-adsper="' + k + '" aria-pressed="' + (UI.adsPer === k) + '">' + l + '</button>').join('');
+    $('#ads-seg').innerHTML = ADS_MET.map(([k, l]) => '<button type="button" data-adsmet="' + k + '" aria-pressed="' + (UI.adsMet === k) + '">' + l + '</button>').join('');
+    $('#ads-sort').innerHTML = ADS_SORT.map(([k, l]) => '<button type="button" data-adssort="' + k + '" aria-pressed="' + (UI.adsSort === k) + '">' + l + '</button>').join('');
+    const am = $('#ads-am'); am.hidden = !a.ad_account_id; if (a.ad_account_id) am.href = 'https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=' + encodeURIComponent(a.ad_account_id);
+    if (!meses.length) {
+      $('#ads-sub').textContent = 'Todavía no hay datos de anuncios. Pedile a Claude en el chat: "Actualizá las métricas de Meta Ads del centro de marketing".';
+      $('#ads-kpis').innerHTML = ''; $('#ads-chart').innerHTML = ''; $('#ads-table').innerHTML = ''; return;
+    }
+    const act = a.anuncios_actualizado ? String(a.anuncios_actualizado) : '';
+    $('#ads-sub').textContent = 'Página ' + (a.page_name || 'Weholos') + (a.ig_usuario ? ' · @' + a.ig_usuario : '') + ' · cuenta ' + a.ad_account_id + ' · ' + cur + (act ? ' · actualizado ' + act.slice(8, 10) + '/' + act.slice(5, 7) + '/' + act.slice(0, 4) : '');
+    const n = { todo: meses.length, '12m': 12, '3m': 3, mes: 1 }[UI.adsPer] || meses.length;
+    const sel = meses.slice(-n);
+    const sum = (k) => sel.reduce((s, m) => s + (m[k] || 0), 0);
+    const g = sum('gasto'), sg = sum('seguidores'), im = sum('impresiones'), cl = sum('clics'), it = sum('interacciones');
+    const desde = sel[0].mes, hasta = sel[sel.length - 1].mes; const lbl = (k) => MES_C[+k.slice(5) - 1] + ' ' + k.slice(2, 4);
+    const per = desde === hasta ? lbl(desde) : lbl(desde) + ' a ' + lbl(hasta);
+    const tile = (k, v, d) => '<div class="kpi"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
+    $('#ads-kpis').innerHTML = [
+      tile('Inversión', fmtMon(g, cur), per),
+      tile('Seguidores de Instagram', fmtNum(sg), sg ? fmtMon(g / sg, cur) + ' por seguidor' : 'Sin seguidores atribuidos'),
+      tile('Impresiones', fmtN(im), im ? 'CPM ' + fmtMon((g / im) * 1000, cur) : '—'),
+      tile('Clics al enlace', fmtNum(cl), cl ? fmtMon(g / cl, cur) + ' por clic' : '—'),
+      tile('Interacciones', fmtN(it), (() => { const k = sel.filter((m) => m.gasto > 0).length; return k + (k === 1 ? ' mes' : ' meses') + ' con anuncios activos'; })())
+    ].join('');
+    // gráfico de barras mensual
+    const box = $('#ads-chart'); const W = 720, H = 220, L = 70, R = 12, T = 22, B = 30;
+    const vals = sel.map((m) => Number(m[UI.adsMet] || 0)); const max = niceMax(Math.max(...vals, 0));
+    const bw = (W - L - R) / sel.length; const y = (v) => T + (1 - v / max) * (H - T - B); const isMon = UI.adsMet === 'gasto';
+    let s = '';
+    for (let i = 0; i <= 4; i++) { const v = (max * i) / 4, yy = y(v); s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--line)" stroke-width="1"/><text x="' + (L - 8) + '" y="' + (yy + 4) + '" text-anchor="end" fill="var(--faint)" font-size="11" font-family="JetBrains Mono, monospace">' + (isMon ? fmtN(v) : fmtNum(v)) + '</text>'; }
+    const step = Math.ceil(sel.length / 10); let best = vals.indexOf(Math.max(...vals));
+    sel.forEach((m, i) => {
+      const v = vals[i], x = L + i * bw + bw * 0.15, w = Math.max(2, bw * 0.7), yy = y(v);
+      if (v > 0) s += '<rect x="' + x.toFixed(1) + '" y="' + yy.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + (H - B - yy).toFixed(1) + '" rx="3" fill="' + (i === best ? '#00FFC0' : '#3421FF') + '"><title>' + lbl(m.mes) + ': ' + (isMon ? fmtMon(v, cur) : fmtNum(v)) + '</title></rect>';
+      if (i % step === 0 || i === sel.length - 1) s += '<text x="' + (L + i * bw + bw / 2).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" fill="var(--faint)" font-size="11" font-family="JetBrains Mono, monospace">' + lbl(m.mes) + '</text>';
+    });
+    if (vals[best] > 0) s += '<text x="' + Math.min(Math.max(L + best * bw + bw / 2, L + 30), W - R - 30).toFixed(1) + '" y="' + Math.max(y(vals[best]) - 6, 12).toFixed(1) + '" text-anchor="middle" fill="var(--fg)" font-size="12" font-weight="700" font-family="Poppins, sans-serif">' + (isMon ? fmtMon(vals[best], cur) : fmtNum(vals[best])) + '</text>';
+    box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Anuncios de Weholos por mes: ' + esc(ADS_MET.find((x) => x[0] === UI.adsMet)[1]) + '">' + s + '</svg>';
+    // tabla de anuncios (siempre histórico por anuncio)
+    const cps = (x) => x.seguidores ? x.gasto / x.seguidores : Infinity;
+    const an = (a.anuncios || []).slice().sort((p, q) => UI.adsSort === 'seguidores' ? q.seguidores - p.seguidores : UI.adsSort === 'cps' ? cps(p) - cps(q) : UI.adsSort === 'gasto' ? q.gasto - p.gasto : (q.creado || '') < (p.creado || '') ? -1 : 1).slice(0, 15);
+    $('#ads-table').innerHTML = '<table><thead><tr><th>Anuncio</th><th>Creado</th><th>Inversión</th><th>Seguidores</th><th>Costo por seguidor</th><th>Resultado</th><th>Alcance</th><th><span style="position:absolute;left:-9999px">Ver</span></th></tr></thead><tbody>' +
+      an.map((x) => '<tr><td style="max-width:280px;white-space:normal">' + esc(x.nombre || 'Anuncio') + '<div class="muted" style="font-size:12px">' + esc(x.objetivo || '') + ' · ' + esc(x.estado || '') + '</div></td><td class="mono">' + esc(x.creado || '') + '</td><td>' + fmtMon(x.gasto, cur) + '</td><td>' + fmtNum(x.seguidores) + '</td><td>' + (x.seguidores ? fmtMon(x.gasto / x.seguidores, cur) : '—') + '</td><td>' + (x.resultados != null ? fmtNum(x.resultados) + ' <span class="muted" style="font-size:12px">' + esc(x.tipo_resultado || '') + '</span>' : '—') + '</td><td>' + fmtNum(x.alcance) + '</td><td>' + (a.ad_account_id ? '<a class="btn small" href="https://adsmanager.facebook.com/adsmanager/manage/ads?act=' + encodeURIComponent(a.ad_account_id) + '&selected_ad_ids=' + encodeURIComponent(x.id) + '" target="_blank" rel="noopener">Ver en Meta</a>' : '') + '</td></tr>').join('') +
+      '</tbody></table>' + ((a.anuncios || []).length > 15 ? '<p class="muted" style="margin:8px 0 0;font-size:12px">Mostrando 15 de ' + a.anuncios.length + ' anuncios.</p>' : '');
+  }
+  $('#ads-box').addEventListener('click', (e) => {
+    const p = e.target.closest('[data-adsper]'); if (p) { UI.adsPer = p.dataset.adsper; renderAdsMetrics(); return; }
+    const m = e.target.closest('[data-adsmet]'); if (m) { UI.adsMet = m.dataset.adsmet; renderAdsMetrics(); return; }
+    const o = e.target.closest('[data-adssort]'); if (o) { UI.adsSort = o.dataset.adssort; renderAdsMetrics(); }
+  });
+
   /* ---------- Formato de video: explicativo vs a cámara ---------- */
   const VID = { explicativo: 'Explicativo', camara: 'A cámara' };
   function sugerirVideo(t) {
@@ -2889,7 +2985,7 @@ a.btn.primary{color:#fff}
       sub('metrics', renderMetrics); sub('posts', renderCal); sub('reels', renderReels); sub('ideas', renderIdeas); sub('pilares', renderIdeas); sub('meses', renderMes); sub('disenos', renderMes); sub('historias', renderHistorias); sub('campanas', renderCampanas); sub('reciclajes', renderReciclar);
       db.doc('config/reglas').onSnapshot((snap) => { S.config = snap.exists ? snap.data() : null; renderRules(); }, () => {});
       db.doc('config/meta').onSnapshot((snap) => { S.meta = snap.exists ? snap.data() : null; renderWeek(); }, () => {});
-      db.doc('config/ads').onSnapshot((snap) => { S.ads = snap.exists ? snap.data() : null; renderCampanas(); }, () => {});
+      db.doc('config/ads').onSnapshot((snap) => { S.ads = snap.exists ? snap.data() : null; renderCampanas(); renderAdsMetrics(); }, () => {});
       db.doc('config/ads_refs').onSnapshot((snap) => { S.adsRefs = snap.exists ? snap.data() : null; renderCampanas(); }, () => {});
       db.doc('config/radar').onSnapshot((snap) => { S.radar = snap.exists ? snap.data() : null; renderTendencias(); renderInicio(); }, () => {});
       db.doc('config/plan').onSnapshot((snap) => { S.plan = snap.exists ? snap.data() : null; renderPlan(); }, () => {});
